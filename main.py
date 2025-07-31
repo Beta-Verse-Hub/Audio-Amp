@@ -2,85 +2,149 @@ import wave
 import pyaudio
 import numpy as np
 import keyboard
+# Removed scipy.signal as per your request
 
-
-
-def play(audio_file, bass_boost_factor=1.2, treble_boost_factor=1.2, window_size=50):
+def play(audio_file, bass_boost_factor=1.0, mid_boost_factor=1.0, treble_boost_factor=1.0):
     """
-    Play an audio file with optional bass and treble boosting
-    
+    Play an audio file with optional bass, mid, and treble boosting using
+    FFT-based frequency manipulation.
+
     Parameters
     ----------
     audio_file : str
-        Path to the audio file to play
+        Path to the audio file to play.
     bass_boost_factor : float, optional
-        Boost factor for bass sound, by default 1.2
+        Boost factor for bass sound, by default 1.0 (no boost).
+    mid_boost_factor : float, optional
+        Boost factor for mid sound, by default 1.0 (no boost).
     treble_boost_factor : float, optional
-        Boost factor for treble sound, by default 1.2
-    window_size : int, optional
-        Window size for calculating the average level for bass boost, by default 50
-    
+        Boost factor for treble sound, by default 1.0 (no boost).
+
     Notes
     -----
-    Press 'z' to increase the bass boost, 'c' to decrease, 'd' to increase the treble boost, 'a' to decrease
+    Press 'z' to increase the bass boost, 'c' to decrease.
+    Press 'e' to increase the mid boost, 'q' to decrease.
+    Press 'd' to increase the treble boost, 'a' to decrease.
+    Press 'esc' to exit.
     """
     wf = wave.open(audio_file, 'rb')
     p = pyaudio.PyAudio()
-    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
+
+    # Get audio file parameters
+    channels = wf.getnchannels()
+    sample_rate = wf.getframerate()
+    sample_width = wf.getsampwidth()
+    chunk_size = 1024
+
+    # Open audio stream
+    stream = p.open(format=p.get_format_from_width(sample_width),
+                    channels=channels,
+                    rate=sample_rate,
                     output=True)
-                    
-    data = wf.readframes(1024)
-    history = np.zeros(window_size)
-    frames_processed = 0
-    previous_value = 0
+
+    # Define EQ frequency ranges (these are approximate and can be tuned)
+    bass_max_freq = 250    # Upper limit for bass frequencies
+    mid_min_freq = 250     # Lower limit for mid frequencies
+    mid_max_freq = 4000    # Upper limit for mid frequencies
+    treble_min_freq = 4000 # Lower limit for treble frequencies
+
+    # Read the first chunk of audio data
+    data = wf.readframes(chunk_size)
+    
+    print("Use keyboard to adjust EQ:")
+    print("Bass: 'z' (up), 'c' (down)")
+    print("Mid: 'e' (up), 'q' (down)")
+    print("Treble: 'd' (up), 'a' (down)")
+    print("Press 'esc' to exit.")
+
     while data:
+        # Convert bytes to numpy array
+        # Reshape for multi-channel audio if applicable (samples x channels)
         audio_array = np.frombuffer(data, dtype=np.int16).astype(np.float32)
-        modified_array = np.copy(audio_array)
-
-        # Bass boost
-        if frames_processed >= window_size:
-            average_level = np.mean(history)
-            for i in range(len(modified_array)):
-                if abs(modified_array[i]) > average_level:
-                    modified_array[i] *= bass_boost_factor
+        if channels > 1:
+            audio_array = audio_array.reshape(-1, channels)
         
-        # Treble boost
-        for i in range(len(modified_array)):
-            change = modified_array[i] - previous_value
-            modified_array[i] += change * (treble_boost_factor - 1)
-            previous_value = audio_array[i]
+        # Perform Fast Fourier Transform (FFT)
+        # Apply FFT along the first axis (samples) for multi-channel or single channel
+        fft_spectrum = np.fft.fft(audio_array, axis=0)
+        
+        # Get frequencies corresponding to FFT bins
+        frequencies = np.fft.fftfreq(len(audio_array), d=1.0/sample_rate)
 
-        # Clip to avoid distortion
+        # Create a copy of the FFT spectrum to modify
+        modified_fft_spectrum = np.copy(fft_spectrum)
+
+        # Apply boosts based on frequency ranges for each channel
+        for ch in range(channels):
+            for i, freq in enumerate(frequencies):
+                abs_freq = abs(freq) # Use absolute frequency for symmetric bins
+                
+                # Apply bass boost to frequencies below bass_max_freq
+                if abs_freq <= bass_max_freq:
+                    if channels > 1:
+                        modified_fft_spectrum[i, ch] *= bass_boost_factor
+                    else:
+                        modified_fft_spectrum[i] *= bass_boost_factor
+                
+                # Apply mid boost to frequencies between mid_min_freq and mid_max_freq
+                elif mid_min_freq < abs_freq <= mid_max_freq:
+                    if channels > 1:
+                        modified_fft_spectrum[i, ch] *= mid_boost_factor
+                    else:
+                        modified_fft_spectrum[i] *= mid_boost_factor
+                
+                # Apply treble boost to frequencies above treble_min_freq
+                elif abs_freq > treble_min_freq:
+                    if channels > 1:
+                        modified_fft_spectrum[i, ch] *= treble_boost_factor
+                    else:
+                        modified_fft_spectrum[i] *= treble_boost_factor
+
+        # Perform Inverse Fast Fourier Transform (IFFT)
+        # Take the real part as the output must be real audio data
+        modified_array = np.fft.ifft(modified_fft_spectrum, axis=0).real
+        
+        # Flatten the array back to 1D for writing to the audio stream if multi-channel
+        if channels > 1:
+            modified_array = modified_array.flatten()
+
+        # Clip the audio samples to the valid 16-bit integer range to prevent distortion
         modified_array = np.clip(modified_array, -32768, 32767).astype(np.int16)
+        
+        # Write the modified audio data back to the stream
         stream.write(modified_array.tobytes())
-        data = wf.readframes(1024)
-        frames_processed += len(audio_array)
+        data = wf.readframes(chunk_size) # Read the next chunk
 
-        # Change boost factors using keyboard inputs
+        # Keyboard controls for dynamic boosting adjustments
         if keyboard.is_pressed("z") and bass_boost_factor < 100:
             bass_boost_factor += 1
             print(f"Bass Boost Factor Increased: {bass_boost_factor:.1f}")
         if keyboard.is_pressed("c") and bass_boost_factor > 1:
             bass_boost_factor -= 1
             print(f"Bass Boost Factor Decreased: {bass_boost_factor:.1f}")
+        if keyboard.is_pressed("e") and mid_boost_factor < 100:
+            mid_boost_factor += 1
+            print(f"Mid Boost Factor Increased: {mid_boost_factor:.1f}")
+        if keyboard.is_pressed("q") and mid_boost_factor > 1:
+            mid_boost_factor -= 1
+            print(f"Mid Boost Factor Decreased: {mid_boost_factor:.1f}")
         if keyboard.is_pressed("d") and treble_boost_factor < 100:
             treble_boost_factor += 1
             print(f"Treble Boost Factor Increased: {treble_boost_factor:.1f}")
         if keyboard.is_pressed("a") and treble_boost_factor > 1:
             treble_boost_factor -= 1
             print(f"Treble Boost Factor Decreased: {treble_boost_factor:.1f}")
+        if keyboard.is_pressed("esc"):
+            break
 
+    # Clean up audio stream and PyAudio resources
     stream.stop_stream()
     stream.close()
     p.terminate()
-
+    wf.close()
 
 
 if __name__ == "__main__":
+
     audio_file = "World of Terminal.wav"
-    treble_boost = 1
-    bass_boost = 1
-    window = 75
-    play(audio_file, bass_boost, treble_boost, window)
+    play(audio_file)
