@@ -2,9 +2,16 @@ import wave
 import pyaudio
 import numpy as np
 import keyboard
-# Removed scipy.signal as per your request
 
-def play(audio_file, bass_boost_factor=1.0, mid_boost_factor=1.0, treble_boost_factor=1.0):
+bass_boost_factor=1.0
+mid_boost_factor=1.0
+treble_boost_factor=1.0
+playing = True
+
+def stop():
+    playing = False
+
+def play(audio_file):
     """
     Play an audio file with optional bass, mid, and treble boosting using
     FFT-based frequency manipulation.
@@ -27,8 +34,19 @@ def play(audio_file, bass_boost_factor=1.0, mid_boost_factor=1.0, treble_boost_f
     Press 'd' to increase the treble boost, 'a' to decrease.
     Press 'esc' to exit.
     """
+    # Global variables
+    global bass_boost_factor
+    global mid_boost_factor
+    global treble_boost_factor
+
+    # Open audio file
     wf = wave.open(audio_file, 'rb')
+    
+    # Initialize PyAudio
     p = pyaudio.PyAudio()
+
+    # Flag to control audio playback
+    playing = True
 
     # Get audio file parameters
     channels = wf.getnchannels()
@@ -136,15 +154,11 @@ def play(audio_file, bass_boost_factor=1.0, mid_boost_factor=1.0, treble_boost_f
             print(f"Treble Boost Factor Decreased: {treble_boost_factor:.1f}")
         if keyboard.is_pressed("esc"):
             break
+        if not playing:
+            break
 
     # Clean up audio stream and PyAudio resources
     stream.stop_stream()
     stream.close()
     p.terminate()
     wf.close()
-
-
-if __name__ == "__main__":
-
-    audio_file = "World of Terminal.wav"
-    play(audio_file)
