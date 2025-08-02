@@ -9,6 +9,7 @@ treble_boost_factor=1.0
 playing = True
 
 def stop():
+    global playing
     playing = False
 
 def play(audio_file):
