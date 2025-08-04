@@ -8,37 +8,37 @@ mid_boost_factor=1.0
 treble_boost_factor=1.0
 playing = True
 
-def stop():
-    global playing
-    playing = False
-
 def play(audio_file):
     """
-    Play an audio file with optional bass, mid, and treble boosting using
-    FFT-based frequency manipulation.
+    Play an audio file with real-time equalization using the PyAudio library.
 
     Parameters
     ----------
     audio_file : str
         Path to the audio file to play.
-    bass_boost_factor : float, optional
-        Boost factor for bass sound, by default 1.0 (no boost).
-    mid_boost_factor : float, optional
-        Boost factor for mid sound, by default 1.0 (no boost).
-    treble_boost_factor : float, optional
-        Boost factor for treble sound, by default 1.0 (no boost).
 
     Notes
     -----
-    Press 'z' to increase the bass boost, 'c' to decrease.
-    Press 'e' to increase the mid boost, 'q' to decrease.
-    Press 'd' to increase the treble boost, 'a' to decrease.
-    Press 'esc' to exit.
+    This function reads the audio file in chunks and applies equalization using
+    Fast Fourier Transform (FFT). The equalization boost factors are applied
+    based on the frequency ranges for each channel. The user can dynamically
+    adjust the boost factors using the keyboard controls.
+
+    Keyboard controls:
+        * 'z' : Increase bass boost factor
+
+        * 'c' : Decrease bass boost factor
+        * 'e' : Increase mid boost factor
+        * 'q' : Decrease mid boost factor
+        * 'd' : Increase treble boost factor
+        * 'a' : Decrease treble boost factor
+        * 'esc' : Stop playback
     """
     # Global variables
     global bass_boost_factor
     global mid_boost_factor
     global treble_boost_factor
+    global playing
 
     # Open audio file
     wf = wave.open(audio_file, 'rb')
@@ -76,7 +76,7 @@ def play(audio_file):
     print("Treble: 'd' (up), 'a' (down)")
     print("Press 'esc' to exit.")
 
-    while data:
+    while data and playing:
         # Convert bytes to numpy array
         # Reshape for multi-channel audio if applicable (samples x channels)
         audio_array = np.frombuffer(data, dtype=np.int16).astype(np.float32)
@@ -163,3 +163,16 @@ def play(audio_file):
     stream.close()
     p.terminate()
     wf.close()
+
+def stop():
+    """
+    Stops the audio playback.
+
+    Notes
+    -----
+    This function stops the audio playback by setting the global variable `playing`
+    to `False`. This is done to prevent the audio thread from continuing to run
+    after the user has pressed the stop button.
+    """
+    global playing
+    playing = False
