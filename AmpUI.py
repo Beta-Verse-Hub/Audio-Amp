@@ -42,6 +42,11 @@ def increaseBoostFactor(amount, factor):
         AudioManupulator.treble_boost_factor += amount
         trebleEntry.delete(0, END)
         trebleEntry.insert(0, AudioManupulator.treble_boost_factor)
+    
+    elif factor == "gain":
+        AudioManupulator.gain_boost_factor += amount
+        gainEntry.delete(0, END)
+        gainEntry.insert(0, AudioManupulator.gain_boost_factor)
 
 def play():
     """
@@ -84,7 +89,7 @@ def mainThread():
 #-- Main Window --#
 root = Tk()
 root.title("Audio Amplifier")
-root.geometry("1350x740+0+0")
+root.geometry("1300x700+0+0")
 
 
 #-- Thread --#
@@ -93,51 +98,71 @@ mainAudioThread.start()
 
 
 #-- Frames --#
-rectangle = Frame(root, width=1350, height=440, bg="grey")
+rectangle = Frame(root, width=1300, height=700, bg="grey")
 rectangle.place(x=0, y=0)
 
-rectangle2 = Frame(root, width=1350, height=300, bg="#383838")
-rectangle2.place(x=0, y=440)
+rectangle2 = Frame(root, width=650, height=250, bg="#383838")
+rectangle2.place(x=325, y=400)
 
+rectangle3 = Frame(root, width=650, height=150, bg="#383838")
+rectangle3.place(x=325, y=50)
+
+rectangle4 = Frame(root, width=150, height=600, bg="#383838")
+rectangle4.place(x=50, y=50)
+
+rectangle5 = Frame(root, width=150, height=600, bg="#383838")
+rectangle5.place(x=1100, y=50)
 
 #-- Labels --#
 name = Label(rectangle, text="Audio Amplifier", font=("Arial", 30))
-name.place(x=540, y=300)
+name.place(x=520, y=300)
 
 
 #-- Buttons --#
 
 # Play
-playButton = Button(rectangle2, text="Play", font=("Arial", 15), command=play,  width=10, height=3)
-playButton.place(x=900, y=160)
+playButton = Button(rectangle3, text="Play", font=("Arial", 15), command=play,  width=10, height=3)
+playButton.place(x=330, y=35)
 
 # Stop
-stopButton = Button(rectangle2, text="Stop", font=("Arial", 15), command=AudioManupulator.stop,  width=10, height=3)
-stopButton.place(x=760, y=160)
+stopButton = Button(rectangle3, text="Stop", font=("Arial", 15), command=AudioManupulator.stop,  width=10, height=3)
+stopButton.place(x=460, y=35)
 
 
 #-- Boost Buttons --#
 
 # Mid
 increaseMidButton = Button(rectangle2, text="^", width=12, height=2, command=lambda: increaseBoostFactor(0.1, "mid"))
-increaseMidButton.place(x=350,y=140)
+increaseMidButton.place(x=25,y=60)
 
 decreaseMidButton = Button(rectangle2, text="v", width=12, height=2, command=lambda: increaseBoostFactor(-0.1, "mid"))
-decreaseMidButton.place(x=350,y=220)
+decreaseMidButton.place(x=25,y=140)
 
 # Bass
 increaseBassButton = Button(rectangle2, text="^", width=12, height=2, command=lambda: increaseBoostFactor(0.1, "bass"))
-increaseBassButton.place(x=450,y=140)
+increaseBassButton.place(x=145,y=60)
 
 decreaseBassButton = Button(rectangle2, text="v", width=12, height=2, command=lambda: increaseBoostFactor(-0.1, "bass"))
-decreaseBassButton.place(x=450,y=220)
+decreaseBassButton.place(x=145,y=140)
 
 # Treble
 increaseTrebleButton = Button(rectangle2, text="^", width=12, height=2, command=lambda: increaseBoostFactor(0.1, "treble"))
-increaseTrebleButton.place(x=550,y=140)
+increaseTrebleButton.place(x=265,y=60)
 
 decreaseTrebleButton = Button(rectangle2, text="v", width=12, height=2, command=lambda: increaseBoostFactor(-0.1, "treble"))
-decreaseTrebleButton.place(x=550,y=220)
+decreaseTrebleButton.place(x=265,y=140)
+
+# Gain
+increaseGainButton = Button(rectangle2, text="^", width=12, height=2, command=lambda: increaseBoostFactor(0.1, "gain"))
+increaseGainButton.place(x=385,y=60)
+
+decreaseGainButton = Button(rectangle2, text="v", width=12, height=2, command=lambda: increaseBoostFactor(-0.1, "gain"))
+decreaseGainButton.place(x=385,y=140)
+
+
+#-- Overload --#
+overloadLabel = Frame(rectangle2, width=120, height=120)
+overloadLabel.place(x=500,y=60)
 
 
 #-- Entry Boxes --#
@@ -145,17 +170,22 @@ decreaseTrebleButton.place(x=550,y=220)
 # Mid
 midEntry = Entry(rectangle2, font=("Arial", 15), width=8)
 midEntry.insert(0, AudioManupulator.mid_boost_factor)
-midEntry.place(x=350,y=185)
+midEntry.place(x=25,y=105)
 
 # Bass
 bassEntry = Entry(rectangle2, font=("Arial", 15), width=8)
 bassEntry.insert(0, AudioManupulator.bass_boost_factor)
-bassEntry.place(x=450,y=185)
+bassEntry.place(x=145,y=105)
 
 # Treble
 trebleEntry = Entry(rectangle2, font=("Arial", 15), width=8)
 trebleEntry.insert(0, AudioManupulator.treble_boost_factor)
-trebleEntry.place(x=550,y=185)
+trebleEntry.place(x=265,y=105)
+
+# Gain
+gainEntry = Entry(rectangle2, font=("Arial", 15), width=8)
+gainEntry.insert(0, AudioManupulator.gain_boost_factor)
+gainEntry.place(x=385,y=105)
 
 
 #-- Main Loop --#

@@ -3,9 +3,10 @@ import pyaudio
 import numpy as np
 import keyboard
 
-bass_boost_factor=1.0
-mid_boost_factor=1.0
-treble_boost_factor=1.0
+bass_boost_factor = 1.0
+mid_boost_factor = 1.0
+treble_boost_factor = 1.0
+gain_boost_factor = 1.0
 playing = True
 
 def play(audio_file):
@@ -26,7 +27,6 @@ def play(audio_file):
 
     Keyboard controls:
         * 'z' : Increase bass boost factor
-
         * 'c' : Decrease bass boost factor
         * 'e' : Increase mid boost factor
         * 'q' : Decrease mid boost factor
@@ -38,6 +38,7 @@ def play(audio_file):
     global bass_boost_factor
     global mid_boost_factor
     global treble_boost_factor
+    global gain_boost_factor
     global playing
 
     # Open audio file
@@ -129,6 +130,13 @@ def play(audio_file):
 
         # Clip the audio samples to the valid 16-bit integer range to prevent distortion
         modified_array = np.clip(modified_array, -32768, 32767).astype(np.int16)
+
+        # Apply gain boost to the entire signal
+        modified_array *= gain_boost_factor
+
+        # Clip the audio samples to valid 16-bit range after gain
+        modified_array = np.clip(modified_array, -32768, 32767).astype(np.int16)
+
         
         # Write the modified audio data back to the stream
         stream.write(modified_array.tobytes())
@@ -141,18 +149,28 @@ def play(audio_file):
         if keyboard.is_pressed("c") and bass_boost_factor > 1:
             bass_boost_factor -= 1
             print(f"Bass Boost Factor Decreased: {bass_boost_factor:.1f}")
+
         if keyboard.is_pressed("e") and mid_boost_factor < 100:
             mid_boost_factor += 1
             print(f"Mid Boost Factor Increased: {mid_boost_factor:.1f}")
         if keyboard.is_pressed("q") and mid_boost_factor > 1:
             mid_boost_factor -= 1
             print(f"Mid Boost Factor Decreased: {mid_boost_factor:.1f}")
+
         if keyboard.is_pressed("d") and treble_boost_factor < 100:
             treble_boost_factor += 1
             print(f"Treble Boost Factor Increased: {treble_boost_factor:.1f}")
         if keyboard.is_pressed("a") and treble_boost_factor > 1:
             treble_boost_factor -= 1
             print(f"Treble Boost Factor Decreased: {treble_boost_factor:.1f}")
+
+        if keyboard.is_pressed("r") and gain_boost_factor < 10.0:
+            gain_boost_factor += 0.1
+            print(f"Gain Boost Factor Increased: {gain_boost_factor:.1f}")
+        if keyboard.is_pressed("f") and gain_boost_factor > 0.1:
+            gain_boost_factor -= 0.1
+            print(f"Gain Boost Factor Decreased: {gain_boost_factor:.1f}")
+
         if keyboard.is_pressed("esc"):
             break
         if not playing:
