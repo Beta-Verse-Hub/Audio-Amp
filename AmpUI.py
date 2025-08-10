@@ -1,15 +1,59 @@
 #-- Imports --#
 from tkinter import *
+from PIL import Image as pilImage, ImageTk as pilImageTk
 from time import sleep
 from threading import Thread
 import AudioManupulator
 
 
 #-- Global Variables --#
+global playMusic, ampSwitch
 playMusic = False
+ampSwitch = False
 
 
 #-- Functions --#
+def toggle_switch(switchButton):
+    """
+    Toggles the switch button between on and off states.
+
+    Parameters
+    ----------
+    switchButton : tkinter.Button
+        The switch button to toggle.
+
+    Notes
+    -----
+    This function toggles the switch button between on and off states by
+    updating the image of the button and the global variable `ampSwitch`.
+    """
+    global ampSwitch
+    global switchImage
+    global switchIndicator
+
+    if ampSwitch:
+        switchImage = pilImage.open("Assets/offSwitch.png")
+        switchImage = switchImage.resize((96, 192))
+        switchImage = pilImageTk.PhotoImage(switchImage)
+
+        switchButton.config(image=switchImage)
+        switchButton.image = switchImage
+
+        switchIndicator.create_oval(40, 40, 80, 80, fill="#007700")
+
+        ampSwitch = False
+    else:
+        switchImage = pilImage.open("Assets/onSwitch.png")
+        switchImage = switchImage.resize((96, 192))
+        switchImage = pilImageTk.PhotoImage(switchImage)
+
+        switchButton.config(image=switchImage)
+        switchButton.image = switchImage
+
+        switchIndicator.create_oval(40, 40, 80, 80, fill="#00FF00")
+
+        ampSwitch = True
+
 def increaseBoostFactor(amount, factor):
     """
     Increases the boost factor for a given frequency range by a given amount.
@@ -89,7 +133,10 @@ def mainThread():
 #-- Main Window --#
 root = Tk()
 root.title("Audio Amplifier")
-root.geometry("1300x700+0+0")
+root.resizable(False, False)
+window_width = 1300
+window_height = 700
+root.geometry(f"{window_width}x{window_height}+0+0")
 
 
 #-- Thread --#
@@ -98,35 +145,32 @@ mainAudioThread.start()
 
 
 #-- Frames --#
-rectangle = Frame(root, width=1300, height=700, bg="grey")
-rectangle.place(x=0, y=0)
+rectangle = Frame(root, bg="grey")
+rectangle.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-rectangle2 = Frame(root, width=650, height=250, bg="#383838")
-rectangle2.place(x=325, y=400)
+rectangle2 = Frame(root, bg="#383838")
+rectangle2.place(relx=325/window_width, rely=400/window_height, relwidth=650/window_width, relheight=250/window_height)
 
-rectangle3 = Frame(root, width=650, height=150, bg="#383838")
-rectangle3.place(x=325, y=50)
+upperSectionSize = (325, 50)
+rectangle3 = Frame(root, bg="#383838")
+rectangle3.place(relx=upperSectionSize[0]/window_width, rely=upperSectionSize[1]/window_height, relwidth=650/window_width, relheight=150/window_height)
 
-rectangle4 = Frame(root, width=150, height=600, bg="#383838")
-rectangle4.place(x=50, y=50)
+rectangle4 = Frame(root, bg="#383838")
+rectangle4.place(relx=50/window_width, rely=50/window_height, relwidth=150/window_width, relheight=600/window_height)
 
-rectangle5 = Frame(root, width=150, height=600, bg="#383838")
-rectangle5.place(x=1100, y=50)
-
-#-- Labels --#
-name = Label(rectangle, text="Audio Amplifier", font=("Arial", 30))
-name.place(x=520, y=300)
+rectangle5 = Frame(root, bg="#383838")
+rectangle5.place(relx=1100/window_width, rely=50/window_height, relwidth=150/window_width, relheight=600/window_height)
 
 
 #-- Buttons --#
 
 # Play
-playButton = Button(rectangle3, text="Play", font=("Arial", 15), command=play,  width=10, height=3)
-playButton.place(x=330, y=35)
+playButton = Button(rectangle3, text="Play", font=("Arial", 15), command=play)
+playButton.place(relx=265/upperSectionSize[0], rely=17/upperSectionSize[1], relwidth=200/window_width, relheight=250/window_height)
 
 # Stop
-stopButton = Button(rectangle3, text="Stop", font=("Arial", 15), command=AudioManupulator.stop,  width=10, height=3)
-stopButton.place(x=460, y=35)
+stopButton = Button(rectangle3, text="Stop", font=("Arial", 15), command=AudioManupulator.stop)
+stopButton.place(relx=200/upperSectionSize[0], rely=17/upperSectionSize[1], relwidth=200/window_width, relheight=250/window_height)
 
 
 #-- Boost Buttons --#
@@ -160,10 +204,59 @@ decreaseGainButton = Button(rectangle2, text="v", width=12, height=2, command=la
 decreaseGainButton.place(x=385,y=140)
 
 
-#-- Overload --#
-overloadLabel = Frame(rectangle2, width=120, height=120)
-overloadLabel.place(x=500,y=60)
+#-- Sliders --#
+masterVolumeSlider = Scale(rectangle4, from_=2.0, to=0.0, resolution=0.1, orient=VERTICAL, length=300, bg="#383838", fg="white", highlightthickness=0)
+masterVolumeSlider.place(x=45, y=285)
 
+
+#-- Labels --#
+appName = Label(rectangle, text="Audio Amp", font=("Arial", 30))
+appName.place(relx=530/window_width, rely=300/window_height)
+
+# Master Volume
+db2Label = Label(rectangle4, text="2+ db", font=("Arial", 10), bg="#383838", fg="white")
+db2Label.place(x=90, y=285, width=35, height=20)
+
+db1Label = Label(rectangle4, text="1+ db", font=("Arial", 10), bg="#383838", fg="white")
+db1Label.place(x=90, y=425, width=35, height=20)
+
+db0Label = Label(rectangle4, text="0+ db", font=("Arial", 10), bg="#383838", fg="white")
+db0Label.place(x=90, y=565, width=35, height=20)
+
+
+#-- Switches --#
+switchImage = pilImage.open("Assets/offSwitch.png")
+switchImage = switchImage.resize((96, 192))
+switchImage = pilImageTk.PhotoImage(switchImage)
+
+startSwitch = Button(rectangle5, image=switchImage, highlightthickness=0)
+startSwitch.config(command=lambda: toggle_switch(startSwitch))
+startSwitch.place(x=27, y=350, width=96, height=192)
+
+overloadSwitchImage = pilImage.open("Assets/offSwitch.png")
+overloadSwitchImage = overloadSwitchImage.resize((64, 128))
+overloadSwitchImage = pilImageTk.PhotoImage(overloadSwitchImage)
+
+overloadLabel = Button(rectangle2, image=overloadSwitchImage, highlightthickness=0)
+overloadLabel.place(x=500, y=56, width=64, height=128)
+
+
+#-- Indicators --#
+overloadIndicator = Canvas(rectangle5, width=120, height=120, bg="#383838", highlightthickness=0)
+overloadIndicator.create_oval(40, 40, 80, 80, fill="#770000")
+overloadIndicator.place(x=15,y=155)
+
+switchIndicator = Canvas(rectangle5, width=120, height=120, bg="#383838", highlightthickness=0)
+switchIndicator.create_oval(40, 40, 80, 80, fill="#007700")
+switchIndicator.place(x=15,y=15)
+
+volumeIndicator = Canvas(rectangle4, width=30, height=250, bg="#383838", highlightthickness=0)
+volumeIndicator.create_oval(0, 0, 30, 30, fill="#770000")
+volumeIndicator.create_oval(0, 50, 30, 80, fill="#777700")
+volumeIndicator.create_oval(0, 100, 30, 130, fill="#777700")
+volumeIndicator.create_oval(0, 150, 30, 180, fill="#007700")
+volumeIndicator.create_oval(0, 200, 30, 230, fill="#007700")
+volumeIndicator.place(x=60,y=30)
 
 #-- Entry Boxes --#
 
@@ -186,6 +279,10 @@ trebleEntry.place(x=265,y=105)
 gainEntry = Entry(rectangle2, font=("Arial", 15), width=8)
 gainEntry.insert(0, AudioManupulator.gain_boost_factor)
 gainEntry.place(x=385,y=105)
+
+# Music Name
+musicEntry = Entry(rectangle3, font=("Arial", 25))
+musicEntry.place(relx=17/upperSectionSize[0],rely=17/upperSectionSize[1], relwidth=165/upperSectionSize[0], relheight=17/upperSectionSize[1])
 
 
 #-- Main Loop --#

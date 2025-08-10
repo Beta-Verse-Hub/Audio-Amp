@@ -7,6 +7,7 @@ bass_boost_factor = 1.0
 mid_boost_factor = 1.0
 treble_boost_factor = 1.0
 gain_boost_factor = 1.0
+master_volume_factor = 1.0
 playing = True
 
 def play(audio_file):
@@ -39,6 +40,7 @@ def play(audio_file):
     global mid_boost_factor
     global treble_boost_factor
     global gain_boost_factor
+    global master_volume_factor
     global playing
 
     # Open audio file
@@ -133,6 +135,9 @@ def play(audio_file):
 
         # Apply gain boost to the entire signal
         modified_array *= gain_boost_factor
+
+        # Apply master volume control
+        modified_array *= master_volume_factor
 
         # Clip the audio samples to valid 16-bit range after gain
         modified_array = np.clip(modified_array, -32768, 32767).astype(np.int16)
