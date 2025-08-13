@@ -3,14 +3,14 @@ import pyaudio
 import numpy as np
 import keyboard
 
-bass_boost_factor = 1.0
-mid_boost_factor = 1.0
-treble_boost_factor = 1.0
-gain_boost_factor = 1.0
-master_volume_factor = 1.0
+bass_boost_factor = 1
+mid_boost_factor = 1
+treble_boost_factor = 1
+gain_boost_factor = 1
+master_volume_factor = 1
 playing = True
 
-def play(audio_file):
+def play(audio_file, volume_callback=None):
     """
     Play an audio file with real-time equalization using the PyAudio library.
 
@@ -133,19 +133,28 @@ def play(audio_file):
         # Clip the audio samples to the valid 16-bit integer range to prevent distortion
         modified_array = np.clip(modified_array, -32768, 32767).astype(np.int16)
 
-        # Apply gain boost to the entire signal
-        modified_array *= gain_boost_factor
+        # Convert to float for scaling
+        modified_array = modified_array.astype(np.float32)
 
-        # Apply master volume control
+        # Apply gain and master volume
+        modified_array *= gain_boost_factor
         modified_array *= master_volume_factor
 
-        # Clip the audio samples to valid 16-bit range after gain
+        # Clip and convert back to int16
         modified_array = np.clip(modified_array, -32768, 32767).astype(np.int16)
-
         
         # Write the modified audio data back to the stream
         stream.write(modified_array.tobytes())
-        data = wf.readframes(chunk_size) # Read the next chunk
+
+        # Volume meter (based on RMS value)
+        volume_rms = np.sqrt(np.mean(modified_array.astype(np.float32)**2))
+
+        # Send to callback if available
+        if volume_callback is not None:
+            volume_callback(volume_rms)
+
+        # Read the next chunk
+        data = wf.readframes(chunk_size)
 
         # Keyboard controls for dynamic boosting adjustments
         if keyboard.is_pressed("z") and bass_boost_factor < 100:
